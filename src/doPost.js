@@ -1,7 +1,5 @@
 // https://script.google.com/macros/***IKaouy/exec?user=true&id=idnumber
-// test
-// test
-// test test
+
 // adding users in bulk - array of objects
 // [
     // {
@@ -48,11 +46,12 @@ function doPost(e){
         });
     }
 
-    const headersPassed = Object.keys(bodyJSON).sort();
+    // const headersPassed = Object.keys(bodyJSON).sort();
     const params = e.parameters;
 
     if (params["api"] && params["users"] && params["add"] && !Array.isArray(bodyJSON)) {
         // for add endpoint
+        const headersPassed = Object.keys(bodyJSON).sort();
         if (checkHeaders(headers, headersPassed)) {
             let newUserID = newID(idData);
             const arrayOfData = headersOriginalOrder.map(h => bodyJSON[h]);
@@ -90,6 +89,9 @@ function doPost(e){
                 "message": "No data provided for batch addition"
             });
         }
+
+        // Extract headers from the first user in the array
+        const headersPassed = Object.keys(bodyJSON[0]).sort();
 
         if (checkHeaders(headers, headersPassed)) {
             let newRows = []
