@@ -98,6 +98,7 @@ function doPost(e){
             bodyJSON.forEach(function(user){
                 let arrayOfData = headersOriginalOrder.map(h => user[h]);   
                 let newUserID = newID(idData);
+                idData.push(newUserID);
                 arrayOfData.unshift(newUserID);
                 newRows.push(arrayOfData);
             });
