@@ -1,8 +1,5 @@
 // https://script.google.com/macros/***IKaouy/exec?user=true&id=idnumber
 
-
-
-
 // adding users in bulk - array of objects
 // [
     // {
@@ -51,16 +48,6 @@ function doPost(e) {
     // const headersPassed = Object.keys(bodyJSON).sort();
     const params = e.parameters; // Get parameters from the event
 
-<<<<<<< HEAD
-    if (params["api"] && params["users"] && params["add"] && !Array.isArray(bodyJSON)) {
-        // for add endpoint
-        const headersPassed = Object.keys(bodyJSON).sort();
-        if (checkHeaders(headers, headersPassed)) {
-            let newUserID = newID(idData);
-            const arrayOfData = headersOriginalOrder.map(h => bodyJSON[h]);
-            arrayOfData.unshift(newUserID);
-            ssUsers.appendRow(arrayOfData);
-=======
     if (params["api"] && params["users"]) {
         if (params["add"] && !Array.isArray(bodyJSON)) {
             return handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
@@ -87,7 +74,6 @@ function handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOr
         const arrayOfData = headersOriginalOrder.map(h => bodyJSON[h]);
         arrayOfData.unshift(newUserID);
         ssUsers.appendRow(arrayOfData);
->>>>>>> 67535ac (test)
 
         bodyJSON.id = newUserID;
         return sendJSON_({
@@ -146,6 +132,7 @@ function handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOrigi
                 } else {
                     let arrayOfData = headersOriginalOrder.map(h => user[h]);
                     let newUserID = newID(idData);
+                    // update the data, so each user gets a new id
                     idData.push(newUserID);
                     arrayOfData.unshift(newUserID);
                     newRows.push(arrayOfData);

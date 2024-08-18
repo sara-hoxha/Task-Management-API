@@ -141,8 +141,4 @@ function doPost(e){
 
 
 
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> d530b05 (fix code readability, new functions)
