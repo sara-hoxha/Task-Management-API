@@ -51,7 +51,7 @@ function doPost(e) {
     if (params["api"] && params["users"]) {
         if (params["add"] && !Array.isArray(bodyJSON)) {
             return handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
-        } else if (params["batch"]) {
+        } else if (params["batch"] && Array.isArray(bodyJSON)) {
             return handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
         } 
         // else if (params["update"]) {
@@ -101,65 +101,64 @@ function handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOr
 
 function handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder){
     // for batch endpoint
-    if (params["api"] && params["users"] && params["batch"] && Array.isArray(bodyJSON)) {
-        if (bodyJSON.length === 0) {
+    if (bodyJSON.length === 0) {
+        return sendJSON_({
+            "status": "error",
+            "code": 400,
+            "message": "No data provided for batch addition"
+        });
+    }
+
+    // Extract headers from the first user in the array
+    const headersPassed = Object.keys(bodyJSON[0]).sort();
+    // check the headers for each user too
+    if (checkHeaders(headers, headersPassed)) {
+        let newRows = [];
+        let errorMessages = [];
+    
+        bodyJSON.forEach((user, index) => {
+            const userHeadersPassed = Object.keys(user).sort();
+    
+            if (!checkHeaders(headers, userHeadersPassed)) {
+                let missingColumns = headers.filter(h => !userHeadersPassed.includes(h));
+                let unexpectedColumns = userHeadersPassed.filter(h => !headers.includes(h));
+                
+                errorMessages.push({
+                    userIndex: index,
+                    missingColumns: missingColumns,
+                    unexpectedColumns: unexpectedColumns
+                });
+            } else {
+                let arrayOfData = headersOriginalOrder.map(h => user[h]);
+                let newUserID = newID(idData);
+                // update the data, so each user gets a new id
+                idData.push(newUserID);
+                arrayOfData.unshift(newUserID);
+                newRows.push(arrayOfData);
+            }
+        });
+    
+        if (errorMessages.length > 0) {
             return sendJSON_({
                 "status": "error",
                 "code": 400,
-                "message": "No data provided for batch addition"
+                "message": "One or more users have missing or extra data columns",
+                "details": errorMessages
             });
         }
-
-        // Extract headers from the first user in the array
-        const headersPassed = Object.keys(bodyJSON[0]).sort();
-        // check the headers for each user too
-        if (checkHeaders(headers, headersPassed)) {
-            let newRows = [];
-            let errorMessages = [];
-        
-            bodyJSON.forEach((user, index) => {
-                const userHeadersPassed = Object.keys(user).sort();
-        
-                if (!checkHeaders(headers, userHeadersPassed)) {
-                    let missingColumns = headers.filter(h => !userHeadersPassed.includes(h));
-                    let unexpectedColumns = userHeadersPassed.filter(h => !headers.includes(h));
-                    
-                    errorMessages.push({
-                        userIndex: index,
-                        missingColumns: missingColumns,
-                        unexpectedColumns: unexpectedColumns
-                    });
-                } else {
-                    let arrayOfData = headersOriginalOrder.map(h => user[h]);
-                    let newUserID = newID(idData);
-                    // update the data, so each user gets a new id
-                    idData.push(newUserID);
-                    arrayOfData.unshift(newUserID);
-                    newRows.push(arrayOfData);
-                }
-            });
-        
-            if (errorMessages.length > 0) {
-                return sendJSON_({
-                    "status": "error",
-                    "code": 400,
-                    "message": "One or more users have missing or extra data columns",
-                    "details": errorMessages
-                });
+    
+        if (newRows.length > 0) {
+            ssUsers.getRange(ssUsers.getLastRow() + 1, 1, newRows.length, newRows[0].length).setValues(newRows);
+        }
+    
+        return sendJSON_({
+            "status": "success",
+            "code": 200,
+            "message": "Batch data added successfully",
+            "details": {
+                "addedRecords": newRows.length
             }
-        
-            if (newRows.length > 0) {
-                ssUsers.getRange(ssUsers.getLastRow() + 1, 1, newRows.length, newRows[0].length).setValues(newRows);
-            }
-        
-            return sendJSON_({
-                "status": "success",
-                "code": 200,
-                "message": "Batch data added successfully",
-                "details": {
-                    "addedRecords": newRows.length
-                }
-            });
+        });
     } else {
             // Error response for incorrect headers
             let missingColumns = headers.filter(h => !headersPassed.includes(h));
@@ -175,8 +174,8 @@ function handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOrigi
                 });
         }
 
-    }
 }
+
 
 
 // function doPost(e){
