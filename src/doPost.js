@@ -51,32 +51,14 @@ function doPost(e) {
     // const headersPassed = Object.keys(bodyJSON).sort();
     const params = e.parameters; // Get parameters from the event
 
-    if (params["api"] && params["users"]) {
-        if (params["add"] && !Array.isArray(bodyJSON)) {
-            return handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
-        } else if (params["batch"]) {
-            return handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
-        } 
-        // else if (params["update"]) {
-        //     return handleUpdateUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
-        // // } else if (params["delete"]) {
-        // //     return handleDeleteUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
-        // // }
-        // }
-    }
-    return sendErrorResponse(400, "Invalid endpoint or data format");
-    
-}
-
-
-function handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder){
-    // for add endpoint
-    const headersPassed = Object.keys(bodyJSON).sort();
-    if (checkHeaders(headers, headersPassed)) {
-        let newUserID = newID(idData);
-        const arrayOfData = headersOriginalOrder.map(h => bodyJSON[h]);
-        arrayOfData.unshift(newUserID);
-        ssUsers.appendRow(arrayOfData);
+    if (params["api"] && params["users"] && params["add"] && !Array.isArray(bodyJSON)) {
+        // for add endpoint
+        const headersPassed = Object.keys(bodyJSON).sort();
+        if (checkHeaders(headers, headersPassed)) {
+            let newUserID = newID(idData);
+            const arrayOfData = headersOriginalOrder.map(h => bodyJSON[h]);
+            arrayOfData.unshift(newUserID);
+            ssUsers.appendRow(arrayOfData);
 
         bodyJSON.id = newUserID;
         return sendJSON_({
@@ -117,14 +99,39 @@ function handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOrigi
         const headersPassed = Object.keys(bodyJSON[0]).sort();
         // check the headers for each user too
         if (checkHeaders(headers, headersPassed)) {
-            let newRows = []
-            bodyJSON.forEach(function(user){
-                let arrayOfData = headersOriginalOrder.map(h => user[h]);   
-                let newUserID = newID(idData);
-                idData.push(newUserID);
-                arrayOfData.unshift(newUserID);
-                newRows.push(arrayOfData);
+            let newRows = [];
+            let errorMessages = [];
+        
+            bodyJSON.forEach((user, index) => {
+                const userHeadersPassed = Object.keys(user).sort();
+        
+                if (!checkHeaders(headers, userHeadersPassed)) {
+                    let missingColumns = headers.filter(h => !userHeadersPassed.includes(h));
+                    let unexpectedColumns = userHeadersPassed.filter(h => !headers.includes(h));
+                    
+                    errorMessages.push({
+                        userIndex: index,
+                        missingColumns: missingColumns,
+                        unexpectedColumns: unexpectedColumns
+                    });
+                } else {
+                    let arrayOfData = headersOriginalOrder.map(h => user[h]);
+                    let newUserID = newID(idData);
+                    idData.push(newUserID);
+                    arrayOfData.unshift(newUserID);
+                    newRows.push(arrayOfData);
+                }
             });
+        
+            if (errorMessages.length > 0) {
+                return sendJSON_({
+                    "status": "error",
+                    "code": 400,
+                    "message": "One or more users have missing or extra data columns",
+                    "details": errorMessages
+                });
+            }
+        
             if (newRows.length > 0) {
                 ssUsers.getRange(ssUsers.getLastRow() + 1, 1, newRows.length, newRows[0].length).setValues(newRows);
             }
