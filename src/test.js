@@ -1,26 +1,3 @@
-// https://script.google.com/macros/***IKaouy/exec?user=true&id=idnumber
-
-// adding users in bulk - array of objects
-// [
-    // {
-    //     "username": "jsmith",
-    //     "email": "jsmith@example.com",
-    //     "age": 30
-    // },
-    // {
-    //     "username": "ajones",
-    //     "email": "ajones@example.com",
-    //     "age": 25
-    // }
-// ]
-// adding only one user - only onbject will be send
-
-// Add a Single User
-// https://yourapp.com?api&users&add
-// Add Multiple Users
-// https://yourapp.com?api&users&batch
-
-
 function doPost(e){
     const ssUsers = ws.getSheetByName("Users")
     let idData = ssUsers.getRange(2,1,ssUsers.getLastRow()-1).getValues()
@@ -94,24 +71,50 @@ function doPost(e){
         const headersPassed = Object.keys(bodyJSON[0]).sort();
 
         if (checkHeaders(headers, headersPassed)) {
-            let newRows = []
-            bodyJSON.forEach(function(user){
-                let arrayOfData = headersOriginalOrder.map(h => user[h]);   
-                let newUserID = newID(idData);
-                idData.push(newUserID);
-                arrayOfData.unshift(newUserID);
-                newRows.push(arrayOfData);
+            let newRows = [];
+            let errorMessages = [];
+        
+            bodyJSON.forEach((user, index) => {
+                const userHeadersPassed = Object.keys(user).sort();
+        
+                if (!checkHeaders(headers, userHeadersPassed)) {
+                    let missingColumns = headers.filter(h => !userHeadersPassed.includes(h));
+                    let unexpectedColumns = userHeadersPassed.filter(h => !headers.includes(h));
+                    
+                    errorMessages.push({
+                        userIndex: index,
+                        missingColumns: missingColumns,
+                        unexpectedColumns: unexpectedColumns
+                    });
+                } else {
+                    let arrayOfData = headersOriginalOrder.map(h => user[h]);
+                    let newUserID = newID(idData);
+                    idData.push(newUserID);
+                    arrayOfData.unshift(newUserID);
+                    newRows.push(arrayOfData);
+                }
             });
+        
+            if (errorMessages.length > 0) {
+                return sendJSON_({
+                    "status": "error",
+                    "code": 400,
+                    "message": "One or more users have missing or extra data columns",
+                    "details": errorMessages
+                });
+            }
+        
             if (newRows.length > 0) {
                 ssUsers.getRange(ssUsers.getLastRow() + 1, 1, newRows.length, newRows[0].length).setValues(newRows);
-            }            
+            }
+        
             return sendJSON_({
                 "status": "success",
-                    "code": 200,
-                    "message": "Batch data added successfully",
-                    "details": {
-                        "addedRecords": newRows.length
-                    }
+                "code": 200,
+                "message": "Batch data added successfully",
+                "details": {
+                    "addedRecords": newRows.length
+                }
             });
         } else {
             // Error response for incorrect headers
@@ -138,21 +141,4 @@ function doPost(e){
 
 
 
-}
-
-
-
-
-
-function newID(data){
-    let maxID = 0
-    data.forEach(id => {
-        if(id > maxID){maxID = parseInt(id)}
-    });
-    return maxID + 1;
-}
-function checkHeaders(headers, headersPassed) {
-    // if both are true, returns true
-    return headers.length === headersPassed.length && 
-            headers.every(item => headersPassed.includes(item));
 }
