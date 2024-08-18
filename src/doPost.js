@@ -51,6 +51,7 @@ function doPost(e) {
     // const headersPassed = Object.keys(bodyJSON).sort();
     const params = e.parameters; // Get parameters from the event
 
+<<<<<<< HEAD
     if (params["api"] && params["users"] && params["add"] && !Array.isArray(bodyJSON)) {
         // for add endpoint
         const headersPassed = Object.keys(bodyJSON).sort();
@@ -59,6 +60,34 @@ function doPost(e) {
             const arrayOfData = headersOriginalOrder.map(h => bodyJSON[h]);
             arrayOfData.unshift(newUserID);
             ssUsers.appendRow(arrayOfData);
+=======
+    if (params["api"] && params["users"]) {
+        if (params["add"] && !Array.isArray(bodyJSON)) {
+            return handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
+        } else if (params["batch"]) {
+            return handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
+        } 
+        // else if (params["update"]) {
+        //     return handleUpdateUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
+        // // } else if (params["delete"]) {
+        // //     return handleDeleteUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
+        // // }
+        // }
+    }
+    return sendErrorResponse(400, "Invalid endpoint or data format");
+    
+}
+
+
+function handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder){
+    // for add endpoint
+    const headersPassed = Object.keys(bodyJSON).sort();
+    if (checkHeaders(headers, headersPassed)) {
+        let newUserID = newID(idData);
+        const arrayOfData = headersOriginalOrder.map(h => bodyJSON[h]);
+        arrayOfData.unshift(newUserID);
+        ssUsers.appendRow(arrayOfData);
+>>>>>>> 67535ac (test)
 
         bodyJSON.id = newUserID;
         return sendJSON_({
