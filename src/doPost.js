@@ -60,9 +60,9 @@ function doPost(e) {
         // //     return handleDeleteUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
         // // }
         // }
-
-    return sendErrorResponse(400, "Invalid endpoint or data format");
     }
+    return sendErrorResponse(400, "Invalid endpoint or data format");
+    
 }
 
 
