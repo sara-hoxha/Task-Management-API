@@ -54,16 +54,48 @@ function doPost(e) {
         } else if (params["batch"] && Array.isArray(bodyJSON)) {
             return handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
         } 
-        // else if (params["update"]) {
-        //     return handleUpdateUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
+        else if (params["update"]) {
+            return handleUpdateUserEndp(bodyJSON, ssUsers, headers, headersOriginalOrder);
         // // } else if (params["delete"]) {
         // //     return handleDeleteUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
         // // }
         // }
-    }
+        }
     return sendErrorResponse(400, "Invalid endpoint or data format");
-    
+    }
 }
+
+function handleUpdateUserEndp(bodyJSON, ssUsers, headers, headersOriginalOrder){
+    const headersPassed = Object.keys(bodyJSON).sort();
+    const userData = ssUsers.getRange(2, 1, ssUsers.getLastRow()-1, ssUsers.getLastColumn()).getValues()
+    let headerRequired = ["UserID"];
+    if(checkHeadersForUpdate(headers, headersPassed, headerRequired)){
+        // let updatedRows = []
+        bodyJSON.forEach(function (user){
+            if(checkHeadersForUpdate(headers, headersPassed, headerRequired)){
+                let userId = parseInt(user["UserID"]);
+                userData.forEach(function (row, rowIndex){
+                    if(userId === parseInt(row[0])){
+                        let updateRow = []
+                        headersOriginalOrder.forEach(function (header, headerIndex){
+                            if(user[header]){
+                                updateRow.push(user[header])
+                            }else{updateRow.push(row[headerIndex])}
+                        });
+                        // updatedRows.push(updateRow);
+                        ssUsers.getRange(rowIndex +2, 1, 1, ssUsers.getLastColumn).setValues(updateRow);
+                        
+                    }
+
+                })
+                
+
+
+            }
+        });
+    }
+}
+
 
 
 function handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder){

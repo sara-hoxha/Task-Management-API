@@ -10,3 +10,9 @@ function checkHeaders(headers, headersPassed) {
     return headers.length === headersPassed.length && 
             headers.every(item => headersPassed.includes(item));
 }
+
+function checkHeadersForUpdate(headers, headersPassed, headerRequired) {
+    // if both are true, returns true
+    return  headers.every(item => headersPassed.includes(item)) && headerRequired.every(item => headersPassed.includes(item));
+        
+}
