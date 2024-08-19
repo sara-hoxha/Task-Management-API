@@ -28,6 +28,8 @@ function doPost(e) {
     let idData = ssUsers.getRange(2,1,ssUsers.getLastRow()-1).getValues()
     const headers = ssUsers.getRange(1, 1, 1, ssUsers.getLastColumn()).getValues()[0]
     const headersOriginalOrder = headers.slice(); // Copy headers to preserve original order
+    const headersOriginalOrderWithId = headers.slice();
+    const headersWithId = headers.sort()
     headersOriginalOrder.shift(); // Remove ID column header from copy
     headers.shift(); // Remove ID column header from original headers
     headers.sort() // Sort headers for comparison
@@ -55,7 +57,7 @@ function doPost(e) {
             return handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
         } 
         else if (params["update"]) {
-            return handleUpdateUserEndp(bodyJSON, ssUsers, headers, headersOriginalOrder);
+            return handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId);
         // // } else if (params["delete"]) {
         // //     return handleDeleteUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
         // // }
@@ -65,36 +67,64 @@ function doPost(e) {
     }
 }
 
-function handleUpdateUserEndp(bodyJSON, ssUsers, headers, headersOriginalOrder){
+function handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId){
     const headersPassed = Object.keys(bodyJSON).sort();
     const userData = ssUsers.getRange(2, 1, ssUsers.getLastRow()-1, ssUsers.getLastColumn()).getValues()
     let headerRequired = ["UserID"];
-    if(checkHeadersForUpdate(headers, headersPassed, headerRequired)){
-        // let updatedRows = []
-        bodyJSON.forEach(function (user){
-            if(checkHeadersForUpdate(headers, headersPassed, headerRequired)){
-                let userId = parseInt(user["UserID"]);
-                userData.forEach(function (row, rowIndex){
-                    if(userId === parseInt(row[0])){
-                        let updateRow = []
-                        headersOriginalOrder.forEach(function (header, headerIndex){
-                            if(user[header]){
-                                updateRow.push(user[header])
-                            }else{updateRow.push(row[headerIndex])}
-                        });
-                        // updatedRows.push(updateRow);
-                        ssUsers.getRange(rowIndex +2, 1, 1, ssUsers.getLastColumn).setValues(updateRow);
-                        
-                    }
+    let updatedRows = [];
+    let userFound = false;
 
-                })
-                
-
-
+    if (!checkHeadersForUpdate(headers, headersPassed, headerRequired)) {
+        let missingColumns = headerRequired.filter(h => !headersPassed.includes(h));
+        let unexpectedColumns = headersPassed.filter(h => !headers.includes(h));
+        return sendJSON_({
+            "status": "error",
+            "code": 400,
+            "message": "Missing required data columns or extra data columns provided",
+            "details": {
+                "missingColumns": missingColumns,
+                "unexpectedColumns": unexpectedColumns
             }
         });
     }
+
+    bodyJSON.forEach(function (user){
+        if(checkHeadersForUpdate(headersWithId, headersPassed, headerRequired)){
+            let userId = parseInt(user["UserID"]);
+            userData.forEach(function (row, rowIndex){
+                if(userId === parseInt(row[0])){
+                    let updateRow = headersOriginalOrderWithId.map(function (header, headerIndex) {
+                        // Use the updated value from 'user' if available; otherwise, keep the original value from 'row'.
+                        return user[header] || row[headerIndex];
+                    });
+                    updatedRows.push({ rowIndex: rowIndex + 2, data: updateRow });
+                    userFound = true;
+                }
+            });
+        }
+    });
+
+    // Apply all updates at once after the loop
+    if (updatedRows.length > 0) {
+        updatedRows.forEach(function (row) {
+            ssUsers.getRange(row.rowIndex, 1, 1, row.data.length).setValues([row.data]);
+        });
+        return sendJSON_({
+            "status": "success",
+            "code": 200,
+            "message": "Data updated successfully",
+            "data": bodyJSON
+        });
+    } else if (!userFound) {
+        return sendJSON_({
+            "status": "error",
+            "code": 404,
+            "message": "User not found"
+        });
+    }
+
 }
+
 
 
 

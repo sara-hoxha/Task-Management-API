@@ -11,8 +11,8 @@ function checkHeaders(headers, headersPassed) {
             headers.every(item => headersPassed.includes(item));
 }
 
-function checkHeadersForUpdate(headers, headersPassed, headerRequired) {
+function checkHeadersForUpdate(headersWithId, headersPassed, headerRequired) {
     // if both are true, returns true
-    return  headers.every(item => headersPassed.includes(item)) && headerRequired.every(item => headersPassed.includes(item));
+    return  headersWithId.every(item => headersPassed.includes(item)) && headerRequired.every(item => headersPassed.includes(item));
         
 }
