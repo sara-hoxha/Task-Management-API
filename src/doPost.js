@@ -68,15 +68,16 @@ function doPost(e) {
 }
 
 function handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId){
-    const headersPassed = Object.keys(bodyJSON).sort();
+    const headersPassed = Object.keys(bodyJSON[0]).sort();
     const userData = ssUsers.getRange(2, 1, ssUsers.getLastRow()-1, ssUsers.getLastColumn()).getValues()
     let headerRequired = ["UserID"];
     let updatedRows = [];
-    let userFound = false;
+    let errorRows = []; // To store error details
 
-    if (!checkHeadersForUpdate(headers, headersPassed, headerRequired)) {
+
+    if (!checkHeadersForUpdate(headersWithId, headersPassed, headerRequired)) {
         let missingColumns = headerRequired.filter(h => !headersPassed.includes(h));
-        let unexpectedColumns = headersPassed.filter(h => !headers.includes(h));
+        let unexpectedColumns = headersPassed.filter(h => !headersWithId.includes(h));
         return sendJSON_({
             "status": "error",
             "code": 400,
@@ -88,11 +89,24 @@ function handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalO
         });
     }
 
-    bodyJSON.forEach(function (user){
+    bodyJSON.forEach(function (user) {
+        if (!user["UserID"]) {
+            // If UserID is missing, add to errorRows
+            errorRows.push({
+                "error": "UserID is missing",
+                "data": user
+            });
+            return; // Skip to the next user
+        }
+        
+    // bodyJSON.forEach(function (user){
         if(checkHeadersForUpdate(headersWithId, headersPassed, headerRequired)){
+            let userFound = false;
             let userId = parseInt(user["UserID"]);
+            // console.log("type of dataID: " + typeof(userId))
             userData.forEach(function (row, rowIndex){
                 if(userId === parseInt(row[0])){
+                    console.log("type of dataID in the sheet: " + typeof(row[0]))
                     let updateRow = headersOriginalOrderWithId.map(function (header, headerIndex) {
                         // Use the updated value from 'user' if available; otherwise, keep the original value from 'row'.
                         return user[header] || row[headerIndex];
@@ -101,25 +115,39 @@ function handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalO
                     userFound = true;
                 }
             });
+            if (!userFound) {
+                errorRows.push({
+                    "error": "User not found",
+                    "data": user
+                });
+            }
         }
     });
+
 
     // Apply all updates at once after the loop
     if (updatedRows.length > 0) {
         updatedRows.forEach(function (row) {
-            ssUsers.getRange(row.rowIndex, 1, 1, row.data.length).setValues([row.data]);
+            ssUsers.getRange(row["rowIndex"], 1, 1, headersOriginalOrderWithId.length).setValues([row.data]);
+            delete row["rowIndex"]
         });
+    }
+    // Send a detailed response
+    if (updatedRows.length > 0 || errorRows.length > 0) {
         return sendJSON_({
-            "status": "success",
-            "code": 200,
-            "message": "Data updated successfully",
-            "data": bodyJSON
+            "status": errorRows.length > 0 ? "partial_success" : "success",
+            "code": errorRows.length > 0 ? 206 : 200, // Use 206 for partial success
+            "message": errorRows.length > 0 ? "Some users failed to update" : "Data updated successfully",
+            "data": {
+                "updated": updatedRows,
+                "errors": errorRows
+            }
         });
-    } else if (!userFound) {
+    } else {
         return sendJSON_({
             "status": "error",
             "code": 404,
-            "message": "User not found"
+            "message": "No users found or updated"
         });
     }
 
