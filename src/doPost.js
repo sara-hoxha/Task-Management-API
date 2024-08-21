@@ -13,7 +13,7 @@
     //     "age": 25
     // }
 // ]
-// adding only one user - only onbject will be send
+// adding only one user - only object will be send
 
 // Add a Single User
 // https://yourapp.com?api&users&add
@@ -59,7 +59,7 @@ function doPost(e) {
         else if (params["update"]) {
             return handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId);
         // // } else if (params["delete"]) {
-        // //     return handleDeleteUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder);
+        // //     return handleDeleteUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId);
         // // }
         // }
         }
@@ -67,8 +67,18 @@ function doPost(e) {
     }
 }
 
+function handleDeleteUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId){
+    
+}
+
+
 function handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId){
-    const headersPassed = Object.keys(bodyJSON[0]).sort();
+    // Normalize bodyJSON to an array if it's not already(in only one user send case)
+    let usersArray = Array.isArray(bodyJSON) ? bodyJSON : [bodyJSON];
+    
+    // Get headers from the first element in the array
+    let headersPassed = Object.keys(usersArray[0]).sort();
+    
     const userData = ssUsers.getRange(2, 1, ssUsers.getLastRow()-1, ssUsers.getLastColumn()).getValues()
     let headerRequired = ["UserID"];
     let updatedRows = [];
@@ -89,7 +99,7 @@ function handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalO
         });
     }
 
-    bodyJSON.forEach(function (user) {
+    usersArray.forEach(function (user) {
         if (!user["UserID"]) {
             // If UserID is missing, add to errorRows
             errorRows.push({
@@ -99,7 +109,7 @@ function handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalO
             return; // Skip to the next user
         }
         
-    // bodyJSON.forEach(function (user){
+    // usersArray.forEach(function (user){
         if(checkHeadersForUpdate(headersWithId, headersPassed, headerRequired)){
             let userFound = false;
             let userId = parseInt(user["UserID"]);
