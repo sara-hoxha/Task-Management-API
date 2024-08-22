@@ -20,7 +20,9 @@
 // Add Multiple Users
 // https://yourapp.com?api&users&batch
 // Put - Edit user information
-// https://yourapp.com?api&users&put
+// https://yourapp.com?api&users&update
+// Delete
+// https://yourapp.com?api&users&userId=1
 
 
 function doPost(e) {
@@ -58,17 +60,98 @@ function doPost(e) {
         } 
         else if (params["update"]) {
             return handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId);
-        // // } else if (params["delete"]) {
-        // //     return handleDeleteUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId);
-        // // }
-        // }
+        } else if (params["delete"]) {
+            let idsParam = params["userID"];
+            return handleDeleteUserEndp(idsParam, ssUsers, idData);
         }
-    return sendErrorResponse(400, "Invalid endpoint or data format");
     }
+    return sendErrorResponse(400, "Invalid endpoint or data format");
 }
 
-function handleDeleteUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId){
-    
+
+function handleDeleteUserEndp(idsParam, ssUsers, idData){
+    let deletedUsers = [];
+    let notFoundUsers = [];
+    let deleteRows = [];
+
+    if (!idsParam) {
+        return sendJSON_({
+            "status": "error",
+            "code": 400,
+            "message": "UserID is required for delete operation"
+        });
+    }
+
+    // Check if the idsParam contains a comma
+    let userIds = idsParam.includes(",") ? idsParam.split(",") : [idsParam];
+
+    // Initial validation
+    userIds.forEach(function(reqId) {
+        if (isNaN(parseInt(reqId))) {
+            notFoundUsers.push({
+                "error": "Invalid UserID format",
+                "data": reqId
+            });
+            return;  
+        }
+    });
+
+    // Early exit if all IDs are invalid
+    if (notFoundUsers.length === userIds.length) {
+        return sendJSON_({
+            "status": "error",
+            "code": 404,
+            "message": "All UserIDs are invalid",
+            "data": notFoundUsers
+        });
+    }
+
+    // Process valid IDs
+    userIds.forEach(function(reqId) {
+        let userFound = false;
+        if (isNaN(parseInt(reqId))) return;  // Skip invalid IDs
+
+        idData.forEach(function(sheetId, rowIndex){
+            if (parseInt(sheetId) === parseInt(reqId)){
+                deleteRows.push(rowIndex + 1)
+                deletedUsers.push(reqId);
+                userFound = true;
+            }
+        });
+        if (!userFound) {
+            notFoundUsers.push({
+                "error": "User not found",
+                "data": reqId
+            });
+        }
+    });
+
+    if (deleteRows.length > 0) {
+        deleteRows.sort((a, b) => b - a);  // Sorting in descending order, to avoid row index issues while deleting
+        deleteRows.forEach(function (row) {
+            ssUsers.deleteRow(row);
+        });
+    }
+
+    if (deletedUsers.length > 0) {
+        return sendJSON_({
+            "status": notFoundUsers.length > 0 ? "partial_success" : "success",
+            "code": notFoundUsers.length > 0 ? 206 : 200,
+            "message": notFoundUsers.length > 0 ? "Some users were not found" : "Users deleted successfully",
+            "data": {
+                "deleted": deletedUsers,
+                "notFound": notFoundUsers
+            }
+        });
+    } else {
+        return sendJSON_({
+            "status": "error",
+            "code": 404,
+            "message": "No users found to delete"
+        });
+    }
+
+
 }
 
 
