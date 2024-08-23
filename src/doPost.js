@@ -35,7 +35,9 @@ function doPost(e) {
     headersOriginalOrder.shift(); // Remove ID column header from copy
     headers.shift(); // Remove ID column header from original headers
     headers.sort() // Sort headers for comparison
-    const body = e.postData.contents // Get the POST request body as a string
+    // const body = e.postData.contents // Get the POST request body as a string
+    // Check if e.postData and e.postData.contents exist
+    const body = e.postData && e.postData.contents ? e.postData.contents : null;
     let bodyJSON; // parsed JSON
     // const bodyJSON = JSON.parse(body);
 
@@ -51,6 +53,7 @@ function doPost(e) {
     }
     // const headersPassed = Object.keys(bodyJSON).sort();
     const params = e.parameters; // Get parameters from the event
+    sheetLog(ws, "Request parameters: " + JSON.stringify(params));
 
     if (params["api"] && params["users"]) {
         if (params["add"] && !Array.isArray(bodyJSON)) {
@@ -62,6 +65,7 @@ function doPost(e) {
             return handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId);
         } else if (params["delete"]) {
             let idsParam = params["userID"];
+            sheetLog(ws, "params['userID']: " + JSON.stringify(params["userID"]));
             return handleDeleteUserEndp(idsParam, ssUsers, idData);
         }
     }
@@ -81,9 +85,10 @@ function handleDeleteUserEndp(idsParam, ssUsers, idData){
             "message": "UserID is required for delete operation"
         });
     }
-
+    sheetLog(ws, "Deleting user IDs: " + idsParam);
     // Check if the idsParam contains a comma
-    let userIds = idsParam.includes(",") ? idsParam.split(",") : [idsParam];
+    let userIds = idsParam.join(",").split(",").map(id => parseInt(id.trim()));
+    sheetLog(ws, "Array of user IDs: " + JSON.stringify(userIds));
 
     // Initial validation
     userIds.forEach(function(reqId) {
@@ -113,7 +118,9 @@ function handleDeleteUserEndp(idsParam, ssUsers, idData){
 
         idData.forEach(function(sheetId, rowIndex){
             if (parseInt(sheetId) === parseInt(reqId)){
-                deleteRows.push(rowIndex + 1)
+                console.log("User found: " + reqId + " at row index: " + rowIndex);
+                sheetLog(ws, "Array of user IDs: " + "User found: " + reqId + " at row index: " + rowIndex);
+                deleteRows.push(rowIndex + 2)
                 deletedUsers.push(reqId);
                 userFound = true;
             }
@@ -129,6 +136,8 @@ function handleDeleteUserEndp(idsParam, ssUsers, idData){
     if (deleteRows.length > 0) {
         deleteRows.sort((a, b) => b - a);  // Sorting in descending order, to avoid row index issues while deleting
         deleteRows.forEach(function (row) {
+            sheetLog(ws, "Deleting row: " + row);
+            console.log("Deleting row: " + row);
             ssUsers.deleteRow(row);
         });
     }
@@ -139,7 +148,7 @@ function handleDeleteUserEndp(idsParam, ssUsers, idData){
             "code": notFoundUsers.length > 0 ? 206 : 200,
             "message": notFoundUsers.length > 0 ? "Some users were not found" : "Users deleted successfully",
             "data": {
-                "deleted": deletedUsers,
+                "deleted": deletedUsers,  
                 "notFound": notFoundUsers
             }
         });
@@ -153,6 +162,7 @@ function handleDeleteUserEndp(idsParam, ssUsers, idData){
 
 
 }
+
 
 
 function handleUpdateUserEndp(bodyJSON, ssUsers, headersWithId, headersOriginalOrderWithId){
