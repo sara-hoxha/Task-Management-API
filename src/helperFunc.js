@@ -5,6 +5,7 @@ function newID(data){
     });
     return maxID + 1;
 }
+
 function checkHeaders(headers, headersPassed) {
     // if both are true, returns true
     return headers.length === headersPassed.length && 
@@ -16,6 +17,10 @@ function checkHeadersForUpdate(headersWithId, headersPassed, headerRequired) {
     return  headersWithId.every(item => headersPassed.includes(item)) && headerRequired.every(item => headersPassed.includes(item));
         
 }
+
+
+
+
 
 // to log doPost logs
 var LOG_SHEET_NAME = "Debug Logs";
