@@ -36,6 +36,7 @@
 
 
 function doPost(e) {
+    const params = e.parameters; // Get parameters from the event
     // const sheet = ws.getSheetByName("Users")
     let sheet;
     const api = params["api"];
@@ -48,14 +49,16 @@ function doPost(e) {
         sheet = ws.getSheetByName("Projects")
     }
     let idData = sheet.getRange(2,1,sheet.getLastRow()-1).getValues()
+    sheetLog(ws, "idData: " + idData);
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
-    // let idData = sheet.getRange(2,1,sheet.getLastRow()-1).getValues()
-    // const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    sheetLog(ws, "headers: " + headers);
     const headersOriginalOrder = headers.slice(); // Copy headers to preserve original order
+    sheetLog(ws, "headersOriginalOrder: " + headersOriginalOrder);
     const headersOriginalOrderWithId = headers.slice();
+    sheetLog(ws, "headersOriginalOrderWithId: " + headersOriginalOrderWithId);
+    headers.shift(); // Remove ID column header from original headers
     const headersWithId = headers.sort()
     headersOriginalOrder.shift(); // Remove ID column header from copy
-    headers.shift(); // Remove ID column header from original headers
     headers.sort() // Sort headers for comparison
     // const body = e.postData.contents // Get the POST request body as a string
     // Check if e.postData and e.postData.contents exist
@@ -73,15 +76,17 @@ function doPost(e) {
             "message": "Invalid JSON format"
         });
     }
-    // const headersPassed = Object.keys(bodyJSON).sort();
-    const params = e.parameters; // Get parameters from the event
+    const headersPassed = Object.keys(bodyJSON).sort();
+    sheetLog(ws, "Headers from sheet: " + headers);
+    sheetLog(ws, "Headers from bodyJSON: " + headersPassed);
     sheetLog(ws, "Request parameters: " + JSON.stringify(params));
     PropertiesService.getScriptProperties().setProperty("API_KEY", '8MBIbIdf3d8sxBhKCx2D');
-    let apiKey = PropertiesService.getScriptProperties().getProperty("API_KEY"); ;
-    if(!params["apiKey"] || (params["apiKey"] !== apiKey)) {
-        return sendErrorResponse(403, "Access to the requested resource is forbidden")
-    }
-    else {
+    // ADD THIS WHEN YOU FINISH THE WHOLE API
+    // let apiKey = PropertiesService.getScriptProperties().getProperty("API_KEY"); ;
+    // if(!params["apiKey"] || (params["apiKey"] !== apiKey)) {
+    //     return sendErrorResponse(403, "Access to the requested resource is forbidden")
+    // }
+    // else {
         if (api && params["users"]) {
             if (params["add"] && !Array.isArray(bodyJSON)) {
                 return handleAddUserEndp(bodyJSON, sheet, idData, headers, headersOriginalOrder);
@@ -110,7 +115,7 @@ function doPost(e) {
                 return handleDeleteTaskEndp(idsParam, sheet, idData);
             }
         }
-    }
+    // }
     return sendErrorResponse(400, "Invalid endpoint or data format");
 }
 

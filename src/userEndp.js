@@ -218,6 +218,46 @@ function handleAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOr
 }
 
 
+
+// DON'T DELETE THIS IS FOR TESTING PURPOSE, WHEN HEADERS DON'T WORK PROPERLY
+// function mockDoPost() {
+//     let sheet = ws.getSheetByName("Users")
+//     let idData = sheet.getRange(2,1,sheet.getLastRow()-1).getValues()
+//     console.log("idData: " + idData);
+//     let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+//     console.log("headers: " + headers)
+    
+//     // let idData = sheet.getRange(2,1,sheet.getLastRow()-1).getValues()
+//     // const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+//     headersOriginalOrder = headers.slice(); // Copy headers to preserve original order
+//     console.log("headersOriginalOrder: " + headersOriginalOrder);
+//     headersOriginalOrderWithId = headers.slice();
+//     console.log("headersOriginalOrderWithId: " + headersOriginalOrderWithId);
+//     headers.shift(); // Remove ID column header from original headers
+//     headersWithId = headers.sort()
+//     console.log("headersWithId after sorted: " + headersWithId );
+//     headersOriginalOrder.shift(); // Remove ID column header from copy
+//     console.log("headersOriginalOrder after shifted: " + headersOriginalOrder );
+//     // headers.shift(); // Remove ID column header from original headers
+//     console.log("headers after shifted: " + headers );
+//     headers.sort() // Sort headers for comparison
+//     console.log("headers after shifted and sorted: " + headers );
+//     // Example usage
+//     const bodyJSON = [
+//         {"FirstName": "Cindy", "LastName": "Smith", "Email": "cindy.smith@example.com", "Role": "new"},
+//         {"FirstName": "Michael", "LastName": "Taylor", "Email": "michael.taylor@example.com", "Role": "new"},
+//         {"FirstName": "Jane", "LastName": "Moore", "Email": "jane.moore@example.com", "Role": "new"}
+//     ];
+
+//     // Call the mock function
+//     handleBatchAddUserEndp(bodyJSON, sheet, idData, headers, headersOriginalOrder);
+
+// }
+
+
+
+
+
 function handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOriginalOrder){
     // for batch endpoint
     if (bodyJSON.length === 0) {
@@ -230,7 +270,9 @@ function handleBatchAddUserEndp(bodyJSON, ssUsers, idData, headers, headersOrigi
 
     // Extract headers from the first user in the array
     const headersPassed = Object.keys(bodyJSON[0]).sort();
+    console.log("headersPassed before checking: " + headersPassed)
     // check the headers for each user too
+    console.log("headers before checking: " + headers)
     if (checkHeaders(headers, headersPassed)) {
         let newRows = [];
         let errorMessages = [];
