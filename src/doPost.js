@@ -90,7 +90,7 @@ function doPost(e) {
     //     return sendErrorResponse(403, "Access to the requested resource is forbidden")
     // }
     // else {
-        if (api && params["users"]) {
+        if (api && params["users"] && !(params["tasks"] && params["projects"])) {
             if (params["add"] && !Array.isArray(bodyJSON)) {
                 return handleAddUserEndp(bodyJSON, sheet, idData, headers, headersOriginalOrder);
             } else if (params["batch"] && Array.isArray(bodyJSON)) {
@@ -104,7 +104,7 @@ function doPost(e) {
                 return handleDeleteUserEndp(idsParam, sheet, idData);
             }
         }
-        if (api && params["tasks"] && !(params["users"])) {
+        if (api && params["tasks"] && !(params["users"] && params["projects"])) {
             if (params["add"] && !Array.isArray(bodyJSON)) {
                 return handleAddTaskEndp(bodyJSON, sheet, idData, headers, headersOriginalOrder);
             } else if (params["batch"] && Array.isArray(bodyJSON)) {
@@ -116,6 +116,20 @@ function doPost(e) {
                 let idsParam = params["taskID"];
                 sheetLog(ws, "params['taskID']: " + JSON.stringify(params["taskID"]));
                 return handleDeleteTaskEndp(idsParam, sheet, idData);
+            }
+        }
+        if (api && params["projects"] && !(params["tasks"] && params["users"])) {
+            if (params["add"] && !Array.isArray(bodyJSON)) {
+                return handleAddProjectEndp(bodyJSON, sheet, idData, headers, headersOriginalOrder);
+            } else if (params["batch"] && Array.isArray(bodyJSON)) {
+                return handleBatchAddProjectEndp(bodyJSON, sheet, idData, headers, headersOriginalOrder);
+            } 
+            else if (params["update"]) {
+                return handleUpdateProjectEndp(bodyJSON, sheet, headersWithId, headersOriginalOrderWithId);
+            } else if (params["delete"]) {
+                let idsParam = params["projectID"];
+                sheetLog(ws, "params['projectID']: " + JSON.stringify(params["projectID"]));
+                return handleDeleteProjectEndp(idsParam, sheet, idData);
             }
         }
     // }
