@@ -76,7 +76,10 @@ function doPost(e) {
             "message": "Invalid JSON format"
         });
     }
-    const headersPassed = Object.keys(bodyJSON).sort();
+    let headersPassed;
+    if(bodyJSON) {
+        headersPassed = Object.keys(bodyJSON).sort();
+    }
     sheetLog(ws, "Headers from sheet: " + headers);
     sheetLog(ws, "Headers from bodyJSON: " + headersPassed);
     sheetLog(ws, "Request parameters: " + JSON.stringify(params));
@@ -110,8 +113,8 @@ function doPost(e) {
             else if (params["update"]) {
                 return handleUpdateTaskEndp(bodyJSON, sheet, headersWithId, headersOriginalOrderWithId);
             } else if (params["delete"]) {
-                let idsParam = params["userID"];
-                sheetLog(ws, "params['userID']: " + JSON.stringify(params["userID"]));
+                let idsParam = params["taskID"];
+                sheetLog(ws, "params['taskID']: " + JSON.stringify(params["taskID"]));
                 return handleDeleteTaskEndp(idsParam, sheet, idData);
             }
         }
