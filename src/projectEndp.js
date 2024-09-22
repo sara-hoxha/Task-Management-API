@@ -15,6 +15,37 @@
 
 
 
+function handleAddProjectEndp(bodyJSON, sheet, idData, headers, headersOriginalOrder){
+    // for add endpoint
+    const headersPassed = Object.keys(bodyJSON).sort();
+    if (checkHeaders(headers, headersPassed)) {
+        let newProjectID = newID(idData);
+        const arrayOfData = headersOriginalOrder.map(h => bodyJSON[h]);
+        arrayOfData.unshift(newProjectID);
+        sheet.appendRow(arrayOfData);
+
+        bodyJSON.id = newProjectID;
+        return sendJSON_({
+            "status": "success",
+            "code": 200,
+            "message": "Data added successfully", data: bodyJSON
+        })
+    } else {
+        // If the headers are not correct
+        // Error response for incorrect headers
+        let missingColumns = headers.filter(h => !headersPassed.includes(h));
+        let unexpectedColumns = headersPassed.filter(h => !headers.includes(h));
+        return sendJSON_({
+            "status": "error",
+            "code": 400,
+            "message": "Missing required data columns or extra data columns provided",
+            "details": {
+                "missingColumns": missingColumns,
+                "unexpectedColumns": unexpectedColumns
+            }
+        })
+    }
+}
 
 
 
