@@ -1,17 +1,3 @@
-// todo
-// User Management
-
-// POST /users: Create a new user
-// GET /users/
-// : Retrieve user details
-// PUT /users/
-// : Update user information
-// DELETE /users/
-// : Delete a user
-
-// https://script.google.com/macros/***IKaouy/exec?user=true&id=idnumber
-
-
 const ws = SpreadsheetApp.openById("1BeOR30LcEp7Oxt4lOv45BCquHCQNqsCPfQG34-qOWRs");
 
 function doGet(e) {
