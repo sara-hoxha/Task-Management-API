@@ -1,4 +1,8 @@
-
+function sendJSON_(jsonResponse){
+    return ContentService
+        .createTextOutput(JSON.stringify(jsonResponse))
+        .setMimeType(ContentService.MimeType.JSON);
+}
 function newID(data){
     let maxID = 0
     data.forEach(id => {
@@ -28,6 +32,12 @@ var LOG_SHEET_NAME = "Debug Logs";
 
 function sheetLog(doc, msg) {
     Logger.log(msg); // Log to Apps Script Logs for debugging in the script editor
+
+    // Limit the message to 50,000 characters
+    var maxChars = 50000;
+    if (msg.length > maxChars) {
+        msg = msg.substring(0, 49980) + '... [truncated]'; // Truncate and add a note
+    }
 
     // Get or create the Debug Logs sheet
         var logSheet = doc.getSheetByName(LOG_SHEET_NAME);
